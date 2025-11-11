@@ -1,20 +1,17 @@
 /**
- * @name DCMessageLoggerapp
+ * @name MessageSniffer
  * @description Logs all message events including edits, deletions, and bulk deletions
- * @version 1.0.2
- * @author SleetWrlds
+ * @version 1.0.3
+ * @author abcwrlds
  */
 
-const { Plugin } = require('enmity/managers/plugins');
-const { React } = require('enmity/metro/common');
-const { create } = require('enmity/patcher');
-const { getByProps } = require('enmity/metro');
-const { sendReply } = require('enmity/api/clyde');
-const { bulk, filters } = require('enmity/metro');
-const { FormRow, FormSection, FormSwitch } = require('enmity/components');
-const { registerPlugin } = require('enmity/managers/plugins');
-
-const Patcher = create('message-logger');
+// Use window.enmity API
+const { React } = window.enmity.modules.common;
+const Patcher = window.enmity.patcher.create('message-logger');
+const { getByProps } = window.enmity.modules;
+const { sendReply } = window.enmity.api.clyde;
+const { bulk, filters } = window.enmity.modules;
+const { FormRow, FormSection, FormSwitch } = window.enmity.components;
 
 // Storage for event subscriptions
 const subscriptions = [];
@@ -266,10 +263,10 @@ function handleCommand(args) {
 
 const MessageLogger = {
     id: 'message-logger',
-    name: 'DCMessageLoggerapp',
-    version: '1.0.2',
+    name: 'MessageSniffer',
+    version: '1.0.3',
     description: 'Logs all message events including edits, deletions, and bulk deletions',
-    authors: [{ name: 'SleetWrlds', id: '0' }],
+    authors: [{ name: 'abcwrlds', id: '0' }],
     
     onStart() {
         console.log('[MessageLogger] Plugin started');
@@ -413,6 +410,4 @@ const MessageLogger = {
     }
 };
 
-registerPlugin(MessageLogger);
-
-module.exports = MessageLogger;
+window.enmity.plugins.registerPlugin(MessageLogger);

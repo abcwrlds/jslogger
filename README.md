@@ -1,23 +1,25 @@
-# MessageLogger - Enmity Plugin
+# DCMessageLoggerapp - Enmity Plugin
 
 A Discord message logger plugin for Enmity that tracks deleted messages, edited messages, and bulk deletions.
 
-## Version 1.0.2 - Critical Fix
+## Version 1.0.3 - Fixed Plugin Registration
 
 ### Fixed Issues
-- **Added `registerPlugin()` call** - Plugin now properly registers with Enmity
-- **Added required `id` field** to plugin metadata (required by Enmity)
-- **Fixed Dispatcher event subscription** - Now properly stores subscription tokens
+- **Switched to `window.enmity` API** - Using proper browser-based API instead of require()
+- **Fixed `registerPlugin()` call** - Now uses `window.enmity.plugins.registerPlugin()`
+- **Removed Node.js require() calls** - These don't work in browser context
+- **Removed module.exports** - Not needed in browser environment
+- **Added required `id` field** to plugin metadata
+- **Fixed Dispatcher event subscription** - Properly stores subscription tokens
 - **Fixed unsubscribe logic** - Properly unsubscribes using stored tokens
 - **Added error handling** - Wrapped all event handlers in try-catch blocks
-- **Improved Dispatcher detection** - Fallback to alternative getByProps patterns
 
 ### What Was Wrong
 The plugin would not appear in the plugins list because:
-1. **Missing `registerPlugin()` call** - Enmity requires explicit plugin registration
-2. Missing `id` field in plugin metadata
-3. Incorrect Dispatcher.subscribe() usage - wasn't storing tokens
-4. Incorrect Dispatcher.unsubscribe() - can't unsubscribe by event name alone
+1. **Using Node.js `require()` instead of `window.enmity` API** - Enmity runs in browser, not Node.js
+2. **Wrong registerPlugin syntax** - Should be `window.enmity.plugins.registerPlugin()`
+3. Missing `id` field in plugin metadata
+4. Incorrect Dispatcher.subscribe() usage - wasn't storing tokens
 5. No error handling, so any error would crash the plugin silently
 
 ## Installation
@@ -27,7 +29,7 @@ Load the plugin from:
 https://raw.githubusercontent.com/abcwrlds/jslogger/refs/heads/main/msglog.js
 ```
 
-After updating to v1.0.2, the plugin should:
+After updating to v1.0.3, the plugin should:
 1. Install successfully
 2. Enable without errors
 3. Persist after Discord restart
