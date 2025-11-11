@@ -1,7 +1,7 @@
 /**
  * @name MessageLogger
  * @description Logs all message events including edits, deletions, and bulk deletions
- * @version 1.0.0
+ * @version 1.0.1
  * @author YourName
  */
 
@@ -14,6 +14,9 @@ const { bulk, filters } = require('enmity/metro');
 const { FormRow, FormSection, FormSwitch } = require('enmity/components');
 
 const Patcher = create('message-logger');
+
+// Storage for event subscriptions
+const subscriptions = [];
 
 // Storage for logged messages
 const messageLog = {
@@ -261,75 +264,111 @@ function handleCommand(args) {
 }
 
 const MessageLogger = {
+    id: 'message-logger',
     name: 'MessageLogger',
-    version: '1.0.0',
+    version: '1.0.1',
     description: 'Logs all message events including edits, deletions, and bulk deletions',
     authors: [{ name: 'YourName', id: '0' }],
     
     onStart() {
         console.log('[MessageLogger] Plugin started');
         
-        // Get Flux dispatcher
-        const Dispatcher = getByProps('dispatch', 'subscribe');
-        
-        if (Dispatcher) {
-            // Listen for MESSAGE_CREATE to cache messages
-            Dispatcher.subscribe('MESSAGE_CREATE', (event) => {
-                if (event.message && event.message.id) {
-                    originalMessages.set(event.message.id, { ...event.message });
+        try {
+            // Get Flux dispatcher
+            const Dispatcher = getByProps('_dispatch', '_subscriptions') || getByProps('dispatch', 'subscribe');
+            
+            if (Dispatcher && Dispatcher.subscribe) {
+                // Listen for MESSAGE_CREATE to cache messages
+                const createSub = Dispatcher.subscribe('MESSAGE_CREATE', (event) => {
+                    try {
+                        if (event.message && event.message.id) {
+                            originalMessages.set(event.message.id, { ...event.message });
+                        }
+                    } catch (err) {
+                        console.error('[MessageLogger] Error in MESSAGE_CREATE:', err);
+                    }
+                });
+                subscriptions.push({ type: 'MESSAGE_CREATE', token: createSub });
+                
+                // Listen for MESSAGE_DELETE
+                if (settings.logDeleted) {
+                    const deleteSub = Dispatcher.subscribe('MESSAGE_DELETE', (event) => {
+                        try {
+                            if (event.channelId && event.id) {
+                                logDeletedMessage(event.channelId, event.id);
+                            }
+                        } catch (err) {
+                            console.error('[MessageLogger] Error in MESSAGE_DELETE:', err);
+                        }
+                    });
+                    subscriptions.push({ type: 'MESSAGE_DELETE', token: deleteSub });
                 }
-            });
-            
-            // Listen for MESSAGE_DELETE
-            if (settings.logDeleted) {
-                Dispatcher.subscribe('MESSAGE_DELETE', (event) => {
-                    if (event.channelId && event.id) {
-                        logDeletedMessage(event.channelId, event.id);
-                    }
-                });
+                
+                // Listen for MESSAGE_UPDATE (edits)
+                if (settings.logEdited) {
+                    const updateSub = Dispatcher.subscribe('MESSAGE_UPDATE', (event) => {
+                        try {
+                            if (event.message && event.message.id && event.message.edited_timestamp) {
+                                logEditedMessage(event.message.channel_id, event.message.id, event.message);
+                            }
+                        } catch (err) {
+                            console.error('[MessageLogger] Error in MESSAGE_UPDATE:', err);
+                        }
+                    });
+                    subscriptions.push({ type: 'MESSAGE_UPDATE', token: updateSub });
+                }
+                
+                // Listen for MESSAGE_DELETE_BULK
+                if (settings.logBulkDeleted) {
+                    const bulkSub = Dispatcher.subscribe('MESSAGE_DELETE_BULK', (event) => {
+                        try {
+                            if (event.channelId && event.ids) {
+                                logBulkDeletedMessages(event.channelId, event.ids);
+                            }
+                        } catch (err) {
+                            console.error('[MessageLogger] Error in MESSAGE_DELETE_BULK:', err);
+                        }
+                    });
+                    subscriptions.push({ type: 'MESSAGE_DELETE_BULK', token: bulkSub });
+                }
             }
             
-            // Listen for MESSAGE_UPDATE (edits)
-            if (settings.logEdited) {
-                Dispatcher.subscribe('MESSAGE_UPDATE', (event) => {
-                    if (event.message && event.message.id && event.message.edited_timestamp) {
-                        logEditedMessage(event.message.channel_id, event.message.id, event.message);
-                    }
+            // Register command
+            const Commands = getByProps('registerCommand');
+            if (Commands && Commands.registerCommand) {
+                Commands.registerCommand({
+                    name: 'msglog',
+                    description: 'Message logger commands',
+                    execute: (args) => handleCommand(args)
                 });
             }
-            
-            // Listen for MESSAGE_DELETE_BULK
-            if (settings.logBulkDeleted) {
-                Dispatcher.subscribe('MESSAGE_DELETE_BULK', (event) => {
-                    if (event.channelId && event.ids) {
-                        logBulkDeletedMessages(event.channelId, event.ids);
-                    }
-                });
-            }
-        }
-        
-        // Register command
-        const Commands = getByProps('registerCommand');
-        if (Commands) {
-            Commands.registerCommand({
-                name: 'msglog',
-                description: 'Message logger commands',
-                execute: (args) => handleCommand(args)
-            });
+        } catch (err) {
+            console.error('[MessageLogger] Error during plugin start:', err);
         }
     },
     
     onStop() {
         console.log('[MessageLogger] Plugin stopped');
-        Patcher.unpatchAll();
         
-        // Unsubscribe from events
-        const Dispatcher = getByProps('dispatch', 'subscribe');
-        if (Dispatcher) {
-            Dispatcher.unsubscribe('MESSAGE_CREATE');
-            Dispatcher.unsubscribe('MESSAGE_DELETE');
-            Dispatcher.unsubscribe('MESSAGE_UPDATE');
-            Dispatcher.unsubscribe('MESSAGE_DELETE_BULK');
+        try {
+            Patcher.unpatchAll();
+            
+            // Unsubscribe from all events
+            const Dispatcher = getByProps('_dispatch', '_subscriptions') || getByProps('dispatch', 'subscribe');
+            if (Dispatcher && Dispatcher.unsubscribe) {
+                subscriptions.forEach(sub => {
+                    try {
+                        Dispatcher.unsubscribe(sub.type, sub.token);
+                    } catch (err) {
+                        console.error(`[MessageLogger] Error unsubscribing from ${sub.type}:`, err);
+                    }
+                });
+            }
+            
+            // Clear subscriptions array
+            subscriptions.length = 0;
+        } catch (err) {
+            console.error('[MessageLogger] Error during plugin stop:', err);
         }
     },
     
