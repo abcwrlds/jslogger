@@ -1,26 +1,9 @@
-# DCMessageLoggerapp - Enmity Plugin
+# MessageSniffer - Enmity Plugin
 
 A Discord message logger plugin for Enmity that tracks deleted messages, edited messages, and bulk deletions.
 
-## Version 1.0.3 - Fixed Plugin Registration
-
-### Fixed Issues
-- **Switched to `window.enmity` API** - Using proper browser-based API instead of require()
-- **Fixed `registerPlugin()` call** - Now uses `window.enmity.plugins.registerPlugin()`
-- **Removed Node.js require() calls** - These don't work in browser context
-- **Removed module.exports** - Not needed in browser environment
-- **Added required `id` field** to plugin metadata
-- **Fixed Dispatcher event subscription** - Properly stores subscription tokens
-- **Fixed unsubscribe logic** - Properly unsubscribes using stored tokens
-- **Added error handling** - Wrapped all event handlers in try-catch blocks
-
-### What Was Wrong
-The plugin would not appear in the plugins list because:
-1. **Using Node.js `require()` instead of `window.enmity` API** - Enmity runs in browser, not Node.js
-2. **Wrong registerPlugin syntax** - Should be `window.enmity.plugins.registerPlugin()`
-3. Missing `id` field in plugin metadata
-4. Incorrect Dispatcher.subscribe() usage - wasn't storing tokens
-5. No error handling, so any error would crash the plugin silently
+**Author:** abcwrlds  
+**Version:** 1.0.3
 
 ## Installation
 
@@ -29,13 +12,15 @@ Load the plugin from:
 https://raw.githubusercontent.com/abcwrlds/jslogger/refs/heads/main/dist/MessageSniffer.js
 ```
 
-**Note:** This plugin requires building. Run `npm run build` to generate the dist file.
+## Building
 
-After updating to v1.0.3, the plugin should:
-1. Install successfully
-2. Enable without errors
-3. Persist after Discord restart
-4. Properly clean up when disabled
+If you want to modify the plugin:
+
+1. Clone the repository
+2. Make your changes to `msglog.js`
+3. Run `npm run build` to compile
+4. The built file will be in `dist/MessageSniffer.js`
+5. Commit and push to update the plugin
 
 ## Features
 
@@ -61,10 +46,12 @@ Access settings through the Enmity plugins menu:
 - Log Bulk Deletions
 - Show Console Notifications
 
-## Technical Details
+## How It Works
 
-The plugin uses:
-- Flux Dispatcher for event subscriptions
-- Proper token-based subscription management
-- Error handling for all async operations
-- Message caching with Map for efficient lookups
+MessageSniffer monitors Discord's internal message events:
+- Caches all messages as they're sent
+- Logs when messages are deleted or edited
+- Tracks bulk deletion events
+- Stores logs locally with a configurable size limit (default: 1000 entries)
+
+All data is stored in memory and will be cleared when you restart Discord.
