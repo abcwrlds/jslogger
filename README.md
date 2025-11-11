@@ -26,8 +26,10 @@ The plugin would not appear in the plugins list because:
 
 Load the plugin from:
 ```
-https://raw.githubusercontent.com/abcwrlds/jslogger/refs/heads/main/msglog.js
+https://raw.githubusercontent.com/abcwrlds/jslogger/refs/heads/main/dist/MessageSniffer.js
 ```
+
+**Note:** This plugin requires building. Run `npm run build` to generate the dist file.
 
 After updating to v1.0.3, the plugin should:
 1. Install successfully

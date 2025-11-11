@@ -1,0 +1,12 @@
+{
+  "name": "messagesniffer",
+  "version": "1.0.3",
+  "description": "Logs all message events including edits, deletions, and bulk deletions",
+  "main": "dist/MessageSniffer.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "keywords": ["enmity", "plugin", "discord"],
+  "author": "abcwrlds",
+  "license": "MIT"
+}
