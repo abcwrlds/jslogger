@@ -3,6 +3,7 @@ import { React } from 'enmity/metro/common';
 import { bulk, filters } from 'enmity/metro';
 import { create } from 'enmity/patcher';
 import { sendReply } from 'enmity/api/clyde';
+import { get, set } from 'enmity/api/settings';
 import manifest from '../manifest.json';
 
 const Patcher = create('message-logger');
@@ -13,24 +14,24 @@ function getByProps(...props: string[]) {
 }
 
 // Storage for event subscriptions
-const subscriptions = [];
+const subscriptions: any[] = [];
 
 // Storage for logged messages
-const messageLog = {
+const messageLog: any = {
     deleted: [],
     edited: [],
     bulkDeleted: [],
     maxEntries: 1000
 };
 
-// Settings
-let settings = {
-    logDeleted: true,
-    logEdited: true,
-    logBulkDeleted: true,
-    showNotifications: true,
-    maxLogSize: 1000
-};
+// Get settings with defaults
+function getSetting(key: string, defaultValue: any) {
+    return get(manifest.name, key, defaultValue);
+}
+
+function setSetting(key: string, value: any) {
+    set(manifest.name, key, value);
+}
 
 // Utility functions
 function formatTimestamp(timestamp) {
@@ -79,11 +80,11 @@ function logDeletedMessage(channelId, messageId) {
     };
     
     messageLog.deleted.unshift(logEntry);
-    if (messageLog.deleted.length > settings.maxLogSize) {
+    if (messageLog.deleted.length > getSetting('maxLogSize', 1000)) {
         messageLog.deleted.pop();
     }
     
-    if (settings.showNotifications) {
+    if (getSetting('showNotifications', true)) {
         console.log(`[MessageSniffer] Deleted message from ${logEntry.author.username}: ${truncateMessage(logEntry.content)}`);
     }
 }
@@ -114,11 +115,11 @@ function logEditedMessage(channelId, messageId, newMessage) {
     };
     
     messageLog.edited.unshift(logEntry);
-    if (messageLog.edited.length > settings.maxLogSize) {
+    if (messageLog.edited.length > getSetting('maxLogSize', 1000)) {
         messageLog.edited.pop();
     }
     
-    if (settings.showNotifications) {
+    if (getSetting('showNotifications', true)) {
         console.log(`[MessageSniffer] Edited message from ${logEntry.author.username}`);
     }
     
@@ -158,11 +159,11 @@ function logBulkDeletedMessages(channelId, messageIds) {
     };
     
     messageLog.bulkDeleted.unshift(logEntry);
-    if (messageLog.bulkDeleted.length > settings.maxLogSize) {
+    if (messageLog.bulkDeleted.length > getSetting('maxLogSize', 1000)) {
         messageLog.bulkDeleted.pop();
     }
     
-    if (settings.showNotifications) {
+    if (getSetting('showNotifications', true)) {
         console.log(`[MessageSniffer] Bulk deleted ${messageIds.length} messages in ${logEntry.channelName}`);
     }
 }
@@ -265,7 +266,6 @@ const MessageSniffer: Plugin = {
                     try {
                         if (event.message && event.message.id) {
                             originalMessages.set(event.message.id, { ...event.message });
-                            console.log('[MessageSniffer] Cached message:', event.message.id);
                         }
                     } catch (err) {
                         console.error('[MessageSniffer] Error in MESSAGE_CREATE:', err);
@@ -275,7 +275,7 @@ const MessageSniffer: Plugin = {
                 subscriptions.push({ type: 'MESSAGE_CREATE', handler: createHandler });
                 
                 // Subscribe to MESSAGE_DELETE
-                if (settings.logDeleted) {
+                if (getSetting('logDeleted', true)) {
                     const deleteHandler = (event: any) => {
                         try {
                             if (event.channelId && event.id) {
@@ -290,7 +290,7 @@ const MessageSniffer: Plugin = {
                 }
                 
                 // Subscribe to MESSAGE_UPDATE
-                if (settings.logEdited) {
+                if (getSetting('logEdited', true)) {
                     const updateHandler = (event: any) => {
                         try {
                             if (event.message && event.message.id && event.message.edited_timestamp) {
@@ -305,7 +305,7 @@ const MessageSniffer: Plugin = {
                 }
                 
                 // Subscribe to MESSAGE_DELETE_BULK
-                if (settings.logBulkDeleted) {
+                if (getSetting('logBulkDeleted', true)) {
                     const bulkHandler = (event: any) => {
                         try {
                             if (event.channelId && event.ids) {
