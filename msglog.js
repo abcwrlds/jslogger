@@ -1,8 +1,8 @@
 /**
- * @name MessageLogger
+ * @name DCMessageLoggerapp
  * @description Logs all message events including edits, deletions, and bulk deletions
- * @version 1.0.1
- * @author YourName
+ * @version 1.0.2
+ * @author SleetWrlds
  */
 
 const { Plugin } = require('enmity/managers/plugins');
@@ -12,6 +12,7 @@ const { getByProps } = require('enmity/metro');
 const { sendReply } = require('enmity/api/clyde');
 const { bulk, filters } = require('enmity/metro');
 const { FormRow, FormSection, FormSwitch } = require('enmity/components');
+const { registerPlugin } = require('enmity/managers/plugins');
 
 const Patcher = create('message-logger');
 
@@ -266,7 +267,7 @@ function handleCommand(args) {
 const MessageLogger = {
     id: 'message-logger',
     name: 'MessageLogger',
-    version: '1.0.1',
+    version: '1.0.2',
     description: 'Logs all message events including edits, deletions, and bulk deletions',
     authors: [{ name: 'YourName', id: '0' }],
     
@@ -411,5 +412,7 @@ const MessageLogger = {
         };
     }
 };
+
+registerPlugin(MessageLogger);
 
 module.exports = MessageLogger;

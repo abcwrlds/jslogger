@@ -2,9 +2,10 @@
 
 A Discord message logger plugin for Enmity that tracks deleted messages, edited messages, and bulk deletions.
 
-## Version 1.0.1 - Bug Fixes
+## Version 1.0.2 - Critical Fix
 
 ### Fixed Issues
+- **Added `registerPlugin()` call** - Plugin now properly registers with Enmity
 - **Added required `id` field** to plugin metadata (required by Enmity)
 - **Fixed Dispatcher event subscription** - Now properly stores subscription tokens
 - **Fixed unsubscribe logic** - Properly unsubscribes using stored tokens
@@ -12,11 +13,12 @@ A Discord message logger plugin for Enmity that tracks deleted messages, edited 
 - **Improved Dispatcher detection** - Fallback to alternative getByProps patterns
 
 ### What Was Wrong
-The plugin would install but fail to enable after Discord restart because:
-1. Missing `id` field in plugin metadata
-2. Incorrect Dispatcher.subscribe() usage - wasn't storing tokens
-3. Incorrect Dispatcher.unsubscribe() - can't unsubscribe by event name alone
-4. No error handling, so any error would crash the plugin silently
+The plugin would not appear in the plugins list because:
+1. **Missing `registerPlugin()` call** - Enmity requires explicit plugin registration
+2. Missing `id` field in plugin metadata
+3. Incorrect Dispatcher.subscribe() usage - wasn't storing tokens
+4. Incorrect Dispatcher.unsubscribe() - can't unsubscribe by event name alone
+5. No error handling, so any error would crash the plugin silently
 
 ## Installation
 
@@ -25,7 +27,7 @@ Load the plugin from:
 https://raw.githubusercontent.com/abcwrlds/jslogger/refs/heads/main/msglog.js
 ```
 
-After updating to v1.0.1, the plugin should:
+After updating to v1.0.2, the plugin should:
 1. Install successfully
 2. Enable without errors
 3. Persist after Discord restart
