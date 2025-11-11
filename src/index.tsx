@@ -253,26 +253,30 @@ const MessageSniffer: Plugin = {
     
     onStart() {
         console.log('[MessageSniffer] Plugin started');
-        console.log('[MessageSniffer] Enmity version:', window.enmity?.version);
         
         try {
-            const Dispatcher = getByProps('_dispatch', '_subscriptions') || getByProps('dispatch', 'subscribe');
-            console.log('[MessageSniffer] Dispatcher found:', !!Dispatcher);
+            // Use Flux Dispatcher from common
+            const { Dispatcher } = window.enmity.modules.common;
+            console.log('[MessageSniffer] Dispatcher:', !!Dispatcher);
             
-            if (Dispatcher && Dispatcher.subscribe) {
-                const createSub = Dispatcher.subscribe('MESSAGE_CREATE', (event) => {
+            if (Dispatcher) {
+                // Subscribe to MESSAGE_CREATE
+                const createHandler = (event: any) => {
                     try {
                         if (event.message && event.message.id) {
                             originalMessages.set(event.message.id, { ...event.message });
+                            console.log('[MessageSniffer] Cached message:', event.message.id);
                         }
                     } catch (err) {
                         console.error('[MessageSniffer] Error in MESSAGE_CREATE:', err);
                     }
-                });
-                subscriptions.push({ type: 'MESSAGE_CREATE', token: createSub });
+                };
+                Dispatcher.subscribe('MESSAGE_CREATE', createHandler);
+                subscriptions.push({ type: 'MESSAGE_CREATE', handler: createHandler });
                 
+                // Subscribe to MESSAGE_DELETE
                 if (settings.logDeleted) {
-                    const deleteSub = Dispatcher.subscribe('MESSAGE_DELETE', (event) => {
+                    const deleteHandler = (event: any) => {
                         try {
                             if (event.channelId && event.id) {
                                 logDeletedMessage(event.channelId, event.id);
@@ -280,12 +284,14 @@ const MessageSniffer: Plugin = {
                         } catch (err) {
                             console.error('[MessageSniffer] Error in MESSAGE_DELETE:', err);
                         }
-                    });
-                    subscriptions.push({ type: 'MESSAGE_DELETE', token: deleteSub });
+                    };
+                    Dispatcher.subscribe('MESSAGE_DELETE', deleteHandler);
+                    subscriptions.push({ type: 'MESSAGE_DELETE', handler: deleteHandler });
                 }
                 
+                // Subscribe to MESSAGE_UPDATE
                 if (settings.logEdited) {
-                    const updateSub = Dispatcher.subscribe('MESSAGE_UPDATE', (event) => {
+                    const updateHandler = (event: any) => {
                         try {
                             if (event.message && event.message.id && event.message.edited_timestamp) {
                                 logEditedMessage(event.message.channel_id, event.message.id, event.message);
@@ -293,12 +299,14 @@ const MessageSniffer: Plugin = {
                         } catch (err) {
                             console.error('[MessageSniffer] Error in MESSAGE_UPDATE:', err);
                         }
-                    });
-                    subscriptions.push({ type: 'MESSAGE_UPDATE', token: updateSub });
+                    };
+                    Dispatcher.subscribe('MESSAGE_UPDATE', updateHandler);
+                    subscriptions.push({ type: 'MESSAGE_UPDATE', handler: updateHandler });
                 }
                 
+                // Subscribe to MESSAGE_DELETE_BULK
                 if (settings.logBulkDeleted) {
-                    const bulkSub = Dispatcher.subscribe('MESSAGE_DELETE_BULK', (event) => {
+                    const bulkHandler = (event: any) => {
                         try {
                             if (event.channelId && event.ids) {
                                 logBulkDeletedMessages(event.channelId, event.ids);
@@ -306,18 +314,24 @@ const MessageSniffer: Plugin = {
                         } catch (err) {
                             console.error('[MessageSniffer] Error in MESSAGE_DELETE_BULK:', err);
                         }
-                    });
-                    subscriptions.push({ type: 'MESSAGE_DELETE_BULK', token: bulkSub });
+                    };
+                    Dispatcher.subscribe('MESSAGE_DELETE_BULK', bulkHandler);
+                    subscriptions.push({ type: 'MESSAGE_DELETE_BULK', handler: bulkHandler });
                 }
+                
+                console.log('[MessageSniffer] Subscribed to', subscriptions.length, 'events');
             }
             
+            // Register command
             const Commands = getByProps('registerCommand');
+            console.log('[MessageSniffer] Commands module:', !!Commands);
             if (Commands && Commands.registerCommand) {
                 Commands.registerCommand({
                     name: 'msglog',
                     description: 'Message logger commands',
-                    execute: (args) => handleCommand(args)
+                    execute: (args: any) => handleCommand(args)
                 });
+                console.log('[MessageSniffer] Command registered');
             }
         } catch (err) {
             console.error('[MessageSniffer] Error during plugin start:', err);
@@ -330,11 +344,12 @@ const MessageSniffer: Plugin = {
         try {
             Patcher.unpatchAll();
             
-            const Dispatcher = getByProps('_dispatch', '_subscriptions') || getByProps('dispatch', 'subscribe');
+            const { Dispatcher } = window.enmity.modules.common;
             if (Dispatcher && Dispatcher.unsubscribe) {
-                subscriptions.forEach(sub => {
+                subscriptions.forEach((sub: any) => {
                     try {
-                        Dispatcher.unsubscribe(sub.type, sub.token);
+                        Dispatcher.unsubscribe(sub.type, sub.handler);
+                        console.log('[MessageSniffer] Unsubscribed from', sub.type);
                     } catch (err) {
                         console.error(`[MessageSniffer] Error unsubscribing from ${sub.type}:`, err);
                     }
@@ -342,6 +357,7 @@ const MessageSniffer: Plugin = {
             }
             
             subscriptions.length = 0;
+            console.log('[MessageSniffer] Cleanup complete');
         } catch (err) {
             console.error('[MessageSniffer] Error during plugin stop:', err);
         }
