@@ -1,11 +1,16 @@
 import { Plugin, registerPlugin } from 'enmity/managers/plugins';
 import { React } from 'enmity/metro/common';
-import { getByProps } from 'enmity/metro';
+import { bulk, filters } from 'enmity/metro';
 import { create } from 'enmity/patcher';
 import { sendReply } from 'enmity/api/clyde';
 import manifest from '../manifest.json';
 
 const Patcher = create('message-logger');
+
+// Helper to get modules
+function getByProps(...props: string[]) {
+    return window.enmity.modules.getByProps(...props);
+}
 
 // Storage for event subscriptions
 const subscriptions = [];
@@ -248,9 +253,11 @@ const MessageSniffer: Plugin = {
     
     onStart() {
         console.log('[MessageSniffer] Plugin started');
+        console.log('[MessageSniffer] Enmity version:', window.enmity?.version);
         
         try {
             const Dispatcher = getByProps('_dispatch', '_subscriptions') || getByProps('dispatch', 'subscribe');
+            console.log('[MessageSniffer] Dispatcher found:', !!Dispatcher);
             
             if (Dispatcher && Dispatcher.subscribe) {
                 const createSub = Dispatcher.subscribe('MESSAGE_CREATE', (event) => {
