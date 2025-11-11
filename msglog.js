@@ -266,10 +266,10 @@ function handleCommand(args) {
 
 const MessageLogger = {
     id: 'message-logger',
-    name: 'MessageLogger',
+    name: 'DCMessageLoggerapp',
     version: '1.0.2',
     description: 'Logs all message events including edits, deletions, and bulk deletions',
-    authors: [{ name: 'YourName', id: '0' }],
+    authors: [{ name: 'SleetWrlds', id: '0' }],
     
     onStart() {
         console.log('[MessageLogger] Plugin started');
