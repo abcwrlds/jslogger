@@ -243,6 +243,26 @@ onStop() {
 
 MessageSniffer (message logger): https://github.com/abcwrlds/jslogger
 
+### Common Issues & Fixes
+
+**Issue: Plugin loads but features don't work**
+- **Fix**: Use `window.enmity.modules.common.Dispatcher` instead of `getByProps('dispatch')`
+- **Fix**: Store event handlers and unsubscribe properly in `onStop()`
+- **Fix**: Add extensive console.log() statements to debug
+
+**Issue: Commands don't register**
+- **Fix**: Check if Commands module exists before registering
+- **Fix**: Use correct command structure with `name`, `description`, `execute`
+
+**Issue: Module not found**
+- **Fix**: Use `getByProps()` with multiple property names
+- **Fix**: Add fallback checks: `const Module = getByProps('prop1') || getByProps('prop2')`
+
+**Issue: Plugin crashes on start**
+- **Fix**: Wrap everything in try-catch blocks
+- **Fix**: Check if modules exist before using them
+- **Fix**: Add null checks for all Discord API calls
+
 ---
 
 ## MY PLUGIN IDEA:
