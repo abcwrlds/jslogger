@@ -1,0 +1,11 @@
+{
+   "name": "MessageSniffer",
+   "version": "1.0.3",
+   "description": "Logs all message events including edits, deletions, and bulk deletions",
+   "authors": [
+      {
+         "name": "abcwrlds",
+         "id": "0"
+      }
+   ]
+}
